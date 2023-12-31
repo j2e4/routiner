@@ -1,0 +1,58 @@
+name: Preview Deployment
+run-name: Preview Deployment
+#  https://vercel.com/guides/how-can-i-use-github-actions-with-vercel
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+on:
+  push:
+    branches:
+      - master # production
+  pull_request:
+    branches:
+      - master # preview
+    paths-ignore:
+      - '**/*.test.jsx?'
+      - '**/*.test.tsx?'
+
+jobs:
+  Deploy-Preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug
+        run: |
+          echo ${{ github.head_ref }}
+      # https://github.com/actions/github-script
+      # 참고 - output 설정: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#example-of-setting-an-output-parameter
+      # 참고 - default env 변수 목록: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+      - name: Define deploy environment
+        uses: actions/github-script@v7
+        id: env
+        with:
+          script: |
+            const { eventName } = context;
+            const isPreview = eventName !== 'push';
+            
+            core.setOutput('mode', isPreview ? 'preview' : 'production');
+            core.setOutput('option',  isPreview ? '' : '--prod');
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # 참고 - vercel cli: https://vercel.com/docs/cli
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=${{ steps.env.outputs.mode }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: |
+          vercel build ${{ steps.env.outputs.option }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      # exposed variables: https://vercel.com/docs/deployments/git/vercel-for-github#configuring-for-github
+      # options: https://vercel.com/docs/cli/deploy#build-env
+      - name: Deploy Project Artifacts to Vercel
+        run: |
+          vercel deploy --build-env VERCEL_GIT_COMMIT_REF=${{ github.head_ref }} --prebuilt ${{ steps.env.outputs.option }} --token=${{ secrets.VERCEL_TOKEN }}
