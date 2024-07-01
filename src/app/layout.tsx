@@ -32,7 +32,7 @@ export default function RootLayout({
         </div>
         <div className="relative mx-auto min-h-screen max-w-2xl space-y-8 bg-white pt-16 shadow-lg shadow-black/10">
           <GlobalQueryClientProvider>
-            {children}
+            <main>{children}</main>
             <ReactQueryDevtools />
           </GlobalQueryClientProvider>
         </div>

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getFetch, postFetch } from 'src/services/fetch';
 import { Routine } from 'types/routine';
 
-const getRoutines = () => {
+export const getRoutines = () => {
   return getFetch('/routine', {
     next: {
       tags: ['routines'],
